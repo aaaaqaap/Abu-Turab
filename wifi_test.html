@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>♛ SIN OSINT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --gold: #d4af37; --gold-light: #f0d060; --gold-dark: #a8882a; --black: #0a0a0a; --dark: #111118; --dark-card: rgba(17, 17, 30, 0.92); --white: #f5f5f5; --text-muted: #8888aa; --border-gold: 1px solid rgba(212, 175, 55, 0.3); --shadow-gold: 0 0 40px rgba(212, 175, 55, 0.1); --radius: 20px; }
+        body { font-family: 'Cairo', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+        .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 20% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.02) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(212, 175, 55, 0.04) 0%, transparent 70%); }
+        .bg-particles::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(1px 1px at 10% 20%, rgba(212, 175, 55, 0.3), transparent), radial-gradient(1px 1px at 30% 60%, rgba(212, 175, 55, 0.2), transparent), radial-gradient(1px 1px at 50% 10%, rgba(212, 175, 55, 0.4), transparent), radial-gradient(1px 1px at 70% 80%, rgba(212, 175, 55, 0.2), transparent), radial-gradient(1px 1px at 90% 40%, rgba(212, 175, 55, 0.3), transparent); background-size: 100% 100%; animation: sparkle 8s linear infinite; }
+        @keyframes sparkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .container { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 30px 20px 20px; position: relative; }
+        .header .logo { font-size: 48px; font-weight: 900; background: linear-gradient(135deg, var(--gold), #f5d77b, var(--gold), var(--gold-light)); background-size: 300% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmerText 4s linear infinite; letter-spacing: 4px; text-shadow: 0 0 60px rgba(212, 175, 55, 0.2); font-family: 'Cairo', sans-serif; }
+        @keyframes shimmerText { 0% { background-position: 0% center; } 100% { background-position: 300% center; } }
+        .header .sub { color: var(--text-muted); font-size: 15px; margin-top: 8px; letter-spacing: 1px; }
+        .header .sub .highlight { color: var(--gold); font-weight: 700; }
+        .header .badge-line { display: flex; justify-content: center; gap: 20px; margin-top: 15px; flex-wrap: wrap; }
+        .header .badge-line .badge { padding: 6px 20px; border: var(--border-gold); border-radius: 30px; font-size: 12px; font-weight: 700; color: var(--gold); background: rgba(212, 175, 55, 0.06); letter-spacing: 0.5px; }
+        .hero-section { display: flex; justify-content: center; align-items: center; padding: 30px 0 25px; position: relative; }
+        .hero-circle { position: relative; width: 180px; height: 180px; display: flex; justify-content: center; align-items: center; }
+        .hero-circle .ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 2px solid transparent; animation: spinRing 6s linear infinite; }
+        .hero-circle .ring:nth-child(1) { border-top: 3px solid var(--gold); border-right: 3px solid transparent; border-bottom: 3px solid transparent; border-left: 3px solid transparent; animation-duration: 4s; }
+        .hero-circle .ring:nth-child(2) { border-top: 3px solid transparent; border-right: 3px solid var(--gold-light); border-bottom: 3px solid transparent; border-left: 3px solid transparent; animation-duration: 5s; animation-direction: reverse; width: 110%; height: 110%; top: -5%; left: -5%; }
+        .hero-circle .ring:nth-child(3) { border-top: 3px solid transparent; border-right: 3px solid transparent; border-bottom: 3px solid var(--gold); border-left: 3px solid transparent; animation-duration: 3.5s; width: 120%; height: 120%; top: -10%; left: -10%; }
+        .hero-circle .ring:nth-child(4) { border-top: 3px solid transparent; border-right: 3px solid transparent; border-bottom: 3px solid transparent; border-left: 3px solid var(--gold-dark); animation-duration: 4.5s; animation-direction: reverse; width: 90%; height: 90%; top: 5%; left: 5%; }
+        @keyframes spinRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hero-circle .center-image { width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #1a1a2e, #0a0a12); border: 2px solid rgba(212, 175, 55, 0.3); display: flex; justify-content: center; align-items: center; font-size: 60px; color: var(--gold); box-shadow: 0 0 50px rgba(212, 175, 55, 0.1), inset 0 0 50px rgba(212, 175, 55, 0.05); transition: all 0.5s; overflow: hidden; z-index: 2; user-select: none; }
+        .hero-circle .center-image i { animation: pulseIcon 3s ease-in-out infinite; }
+        @keyframes pulseIcon { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+        .hero-circle .center-image:hover { border-color: var(--gold); box-shadow: 0 0 80px rgba(212, 175, 55, 0.25); transform: scale(1.02); }
+
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-item { background: var(--dark-card); border: var(--border-gold); border-radius: var(--radius); padding: 18px 12px; text-align: center; backdrop-filter: blur(10px); transition: all 0.4s; position: relative; overflow: hidden; }
+        .stat-item::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); transition: left 0.6s; }
+        .stat-item:hover::before { left: 0; }
+        .stat-item:hover { transform: translateY(-5px); border-color: var(--gold); box-shadow: var(--shadow-gold); }
+        .stat-item .num { font-size: 28px; font-weight: 900; color: var(--gold); font-family: 'Cairo', sans-serif; }
+        .stat-item .lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 600; letter-spacing: 0.5px; }
+
+        .ip-info { background: var(--dark-card); border: var(--border-gold); border-radius: var(--radius); padding: 20px; margin-bottom: 25px; }
+        .ip-info .title { color: var(--gold); font-size: 18px; font-weight: 800; margin-bottom: 15px; text-align: center; }
+        .ip-info .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .ip-info .row .key { color: var(--text-muted); font-weight: 700; font-size: 13px; }
+        .ip-info .row .val { color: var(--white); font-weight: 600; font-size: 13px; text-align: left; }
+
+        .fb-search-card { background: var(--dark-card); backdrop-filter: blur(16px); border: var(--border-gold); border-radius: var(--radius); padding: 35px 30px 30px; margin-bottom: 30px; transition: all 0.4s; box-shadow: var(--shadow-gold); }
+        .fb-search-card:hover { border-color: rgba(212, 175, 55, 0.5); }
+        .fb-search-card .title-area { text-align: center; margin-bottom: 22px; }
+        .fb-search-card .title-area h2 { font-size: 24px; font-weight: 800; color: var(--white); letter-spacing: 1px; }
+        .fb-search-card .title-area h2 i { color: #1877f2; margin-left: 10px; }
+        .fb-search-card .title-area p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        .fb-input-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .fb-input-wrap { flex: 1; min-width: 200px; position: relative; }
+        .fb-input-wrap input { width: 100%; padding: 18px 20px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; color: var(--white); font-size: 17px; font-family: 'Cairo', sans-serif; transition: all 0.4s; text-align: right; font-weight: 600; }
+        .fb-input-wrap input:focus { border-color: #1877f2; outline: none; box-shadow: 0 0 30px rgba(24, 119, 242, 0.15); }
+        .btn-fb-search { padding: 18px 40px; background: linear-gradient(135deg, #1877f2, #0d65d9); border: none; border-radius: 14px; color: #fff; font-size: 18px; font-weight: 900; cursor: pointer; transition: all 0.4s; font-family: 'Cairo', sans-serif; display: flex; align-items: center; gap: 12px; white-space: nowrap; letter-spacing: 1px; }
+        .btn-fb-search:hover { transform: scale(1.03); box-shadow: 0 0 60px rgba(24, 119, 242, 0.3); }
+        .fb-result-item { background: rgba(0, 0, 0, 0.3); border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; border-right: 4px solid #1877f2; transition: all 0.4s; border: 1px solid rgba(24, 119, 242, 0.15); border-right-width: 4px; }
+        .fb-result-item:hover { background: rgba(0, 0, 0, 0.5); transform: translateX(-6px); border-color: #1877f2; }
+        .fb-result-item .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+        .fb-result-item .row .key { color: var(--text-muted); font-size: 13px; font-weight: 700; }
+        .fb-result-item .row .val { color: var(--white); font-size: 14px; text-align: left; font-weight: 600; }
+        .fb-result-item .row .val a { color: #1877f2; text-decoration: none; }
+
+        .search-card { background: var(--dark-card); backdrop-filter: blur(16px); border: var(--border-gold); border-radius: var(--radius); padding: 35px 30px 30px; margin-bottom: 30px; transition: all 0.4s; box-shadow: var(--shadow-gold); }
+        .search-card:hover { border-color: rgba(212, 175, 55, 0.5); }
+        .search-card .title-area { text-align: center; margin-bottom: 22px; }
+        .search-card .title-area h2 { font-size: 24px; font-weight: 800; color: var(--white); letter-spacing: 1px; }
+        .search-card .title-area h2 i { color: var(--gold); margin-left: 10px; }
+        .search-card .title-area p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        .country-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .country-btn { padding: 12px 6px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.4s; text-align: center; font-family: 'Cairo', sans-serif; }
+        .country-btn:hover { background: rgba(212, 175, 55, 0.08); border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+        .country-btn.active { background: rgba(212, 175, 55, 0.12); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 30px rgba(212, 175, 55, 0.08); }
+        .country-btn .code { display: block; font-size: 17px; font-weight: 900; color: var(--white); }
+        .country-btn .name { font-size: 10px; opacity: 0.5; }
+        .country-btn.active .code { color: var(--gold); }
+        .input-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .input-wrap { flex: 1; min-width: 200px; position: relative; }
+        .input-wrap .prefix { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--gold); font-weight: 800; font-size: 15px; pointer-events: none; font-family: 'Cairo', sans-serif; }
+        .input-wrap input { width: 100%; padding: 18px 60px 18px 20px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; color: var(--white); font-size: 17px; font-family: 'Cairo', sans-serif; transition: all 0.4s; direction: ltr; text-align: right; font-weight: 600; }
+        .input-wrap input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 30px rgba(212, 175, 55, 0.08); }
+        .btn-search { padding: 18px 40px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); border: none; border-radius: 14px; color: var(--black); font-size: 18px; font-weight: 900; cursor: pointer; transition: all 0.4s; font-family: 'Cairo', sans-serif; display: flex; align-items: center; gap: 12px; white-space: nowrap; letter-spacing: 1px; }
+        .btn-search:hover { transform: scale(1.03); box-shadow: 0 0 60px rgba(212, 175, 55, 0.3); }
+        .search-hint { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.04); }
+        .search-hint .hint { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        .search-hint .badges { display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-hint .badge { padding: 6px 16px; border-radius: 25px; font-size: 11px; font-weight: 700; background: rgba(212, 175, 55, 0.06); border: var(--border-gold); color: var(--gold); letter-spacing: 0.5px; }
+        .loader-area { display: none; text-align: center; padding: 50px 20px; }
+        .loader-area .spinner { width: 55px; height: 55px; border: 3px solid rgba(212, 175, 55, 0.08); border-top: 3px solid var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 18px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-area p { color: var(--text-muted); font-weight: 600; font-size: 15px; }
+        .results-area { display: none; margin-top: 25px; }
+        .results-area.active { display: block; }
+        .result-item { background: rgba(0, 0, 0, 0.3); border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; border-right: 4px solid var(--gold); transition: all 0.4s; border: 1px solid rgba(212, 175, 55, 0.08); border-right-width: 4px; }
+        .result-item:hover { background: rgba(0, 0, 0, 0.5); transform: translateX(-6px); border-color: var(--gold); }
+        .result-item .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+        .result-item .row .key { color: var(--text-muted); font-size: 13px; font-weight: 700; }
+        .result-item .row .val { color: var(--white); font-size: 14px; text-align: left; font-weight: 600; }
+        .result-item .row .val a { color: var(--gold); text-decoration: none; }
+
+        /* ===== WIFI Map Card ===== */
+        .wifi-card { background: var(--dark-card); backdrop-filter: blur(16px); border: var(--border-gold); border-radius: var(--radius); padding: 35px 30px 30px; margin-bottom: 30px; transition: all 0.4s; box-shadow: var(--shadow-gold); }
+        .wifi-card:hover { border-color: rgba(212, 175, 55, 0.5); }
+        .wifi-card .title-area { text-align: center; margin-bottom: 22px; }
+        .wifi-card .title-area h2 { font-size: 24px; font-weight: 800; color: var(--white); letter-spacing: 1px; }
+        .wifi-card .title-area h2 i { color: var(--gold); margin-left: 10px; }
+        .wifi-card .title-area p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        .wifi-input-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .wifi-input-wrap { flex: 1; min-width: 200px; position: relative; }
+        .wifi-input-wrap input { width: 100%; padding: 18px 20px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; color: var(--white); font-size: 17px; font-family: 'Cairo', sans-serif; transition: all 0.4s; direction: ltr; text-align: right; font-weight: 600; }
+        .wifi-input-wrap input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 30px rgba(212, 175, 55, 0.15); }
+        .btn-wifi { padding: 18px 40px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); border: none; border-radius: 14px; color: var(--black); font-size: 18px; font-weight: 900; cursor: pointer; transition: all 0.4s; font-family: 'Cairo', sans-serif; display: flex; align-items: center; gap: 12px; white-space: nowrap; letter-spacing: 1px; }
+        .btn-wifi:hover { transform: scale(1.03); box-shadow: 0 0 60px rgba(212, 175, 55, 0.3); }
+        .wifi-info-panel { background: rgba(0, 0, 0, 0.3); border: var(--border-gold); border-radius: 14px; padding: 18px; margin-top: 20px; }
+        .wifi-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 10px; }
+        .wifi-info-item { background: rgba(0, 0, 0, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.15); }
+        .wifi-info-title { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 4px; font-weight: 700; }
+        .wifi-info-val { color: var(--gold); font-weight: bold; font-size: 1rem; }
+        #wifiMap { height: 520px; border-radius: 12px; border: 1px solid var(--border-gold); margin: 20px 0; display: none; }
+        .wifi-actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn-earth { background: #2563eb; color: #fff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-csv { background: #059669; color: #fff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; }
+        .wifi-table-wrap { overflow-x: auto; margin-top: 20px; }
+        .wifi-table { width: 100%; border-collapse: collapse; background: rgba(0, 0, 0, 0.3); border-radius: 10px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.15); font-size: 0.9rem; }
+        .wifi-table th, .wifi-table td { padding: 12px 16px; text-align: right; border-bottom: 1px solid rgba(212, 175, 55, 0.08); color: var(--white); }
+        .wifi-table th { background: rgba(0, 0, 0, 0.5); color: var(--gold); font-weight: 800; }
+        .wifi-table tr:hover { background: rgba(212, 175, 55, 0.05); }
+
+        .footer { text-align: center; padding: 30px 20px 15px; border-top: 1px solid rgba(255, 255, 255, 0.02); margin-top: 30px; }
+        .footer .dev-info { color: var(--text-muted); font-size: 14px; font-weight: 600; }
+        .footer .dev-info .highlight { color: var(--gold); font-weight: 800; }
+
+        @media (max-width: 768px) { .container { padding: 15px; } .search-card, .fb-search-card, .wifi-card { padding: 22px 16px 18px; } .input-row, .fb-input-row, .wifi-input-row { flex-direction: column; } .btn-search, .btn-fb-search, .btn-wifi { width: 100%; justify-content: center; } .country-grid { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); } .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; } .header .logo { font-size: 32px; } .hero-circle { width: 140px; height: 140px; } .hero-circle .center-image { width: 105px; height: 105px; font-size: 40px; } .search-hint { flex-direction: column; align-items: stretch; text-align: center; } .search-hint .badges { justify-content: center; } #wifiMap { height: 380px; } }
+        @media (max-width: 480px) { .stats { grid-template-columns: 1fr 1fr; gap: 8px; } .stat-item { padding: 14px 10px; } .stat-item .num { font-size: 22px; } }
+    </style>
+</head>
+<body>
+    <div class="bg-particles"></div>
+    <div class="container">
+        <div class="header">
+            <div class="logo">SIN OSINT</div>
+            <div class="sub"><span class="highlight">@SIN_PHP</span> <span style="color:#333;">|</span> القناة <span class="highlight">@K_K2P</span></div>
+            <div class="badge-line">
+                <span class="badge"><i class="fas fa-shield-alt"></i> آمن</span>
+                <span class="badge"><i class="fas fa-bolt"></i> فوري</span>
+                <span class="badge"><i class="fas fa-cloud"></i> سحابي</span>
+                <span class="badge"><i class="fas fa-database"></i> نراقبك في كل مكان </span>
+                <span class="badge" style="border-color:#ff6b6b;color:#ff6b6b;"><i class="fas fa-code"></i> تم برمجه الموقع بواسطه تيم اصلاحيون الخاص بالمبرمج ساين </span>
+            </div>
+        </div>
+        <div class="hero-section">
+            <div class="hero-circle">
+                <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+                <div class="center-image"><i class="fas fa-eye"></i></div>
+            </div>
+        </div>
+
+        <div class="ip-info" id="ipInfo">
+            <div class="title"><i class="fas fa-network-wired"></i> معلومات اتصالك</div>
+            <div id="ipData">
+                <div class="row"><span class="key"> عنوان IP</span><span class="val" id="userIP">جاري التحميل...</span></div>
+                <div class="row"><span class="key"> الدولة</span><span class="val" id="userCountry">جاري التحميل...</span></div>
+                <div class="row"><span class="key"> المدينة</span><span class="val" id="userCity">جاري التحميل...</span></div>
+                <div class="row"><span class="key"> المزود</span><span class="val" id="userISP">جاري التحميل...</span></div>
+                <div class="row"><span class="key"> المنطقة</span><span class="val" id="userRegion">جاري التحميل...</span></div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item"><div class="num" id="statCache">0</div><div class="lbl">نتائج محفوظة</div></div>
+            <div class="stat-item"><div class="num" id="statSearches">0</div><div class="lbl">عمليات البحث</div></div>
+            <div class="stat-item"><div class="num" id="statUsers">0</div><div class="lbl">مستخدمين</div></div>
+            <div class="stat-item"><div class="num" id="statActive">0</div><div class="lbl">نشطين الآن</div></div>
+        </div>
+
+        <!-- ===== WiFi MAC Search Card (WLoc) ===== -->
+        <div class="wifi-card">
+            <div class="title-area">
+                <h2><i class="fas fa-wifi"></i> تحديد موقع الراوتر عبر MAC</h2>
+                <p>W I F I </p>
+            </div>
+            <form class="wifi-input-row" action="/" method="GET" id="wifiForm">
+                <div class="wifi-input-wrap">
+                    <input type="text" name="mac" id="wifiMacInput" value="00:11:22:33:44:55" placeholder="أدخل عنوان MAC" dir="ltr">
+                </div>
+                <button type="submit" class="btn-wifi"><i class="fas fa-satellite-dish"></i> استعلام سريع</button>
+            </form>
+
+            
+                
+                <p style="text-align:center; color: #ef4444; margin-top:25px;"><i class="fas fa-exclamation-triangle"></i> لم يتم العثور على نتائج للعنوان المكتوب.</p>
+                
+            
+        </div>
+
+        <!-- ===== Facebook Search Card ===== -->
+        <div class="fb-search-card">
+            <div class="title-area">
+                <h2><i class="fab fa-facebook"></i> البحث عن صفحات في فيسبوك</h2>
+                <p>ابحث عن أي صفحة أو شخص في فيسبوك</p>
+            </div>
+            <div class="fb-input-row">
+                <div class="fb-input-wrap">
+                    <input type="text" id="fbSearchInput" placeholder="أدخل اسم الصفحة أو الشخص ...">
+                </div>
+                <button class="btn-fb-search" id="fbSearchBtn" onclick="searchFacebook()">
+                    <i class="fab fa-facebook"></i> بحث في فيسبوك
+                </button>
+            </div>
+            <div id="fbLoader" style="display:none;text-align:center;padding:20px;">
+                <div style="width:40px;height:40px;border:3px solid rgba(212,175,55,0.08);border-top:3px solid #1877f2;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
+                <p style="color:var(--text-muted);margin-top:10px;">جاري البحث في فيسبوك ...</p>
+            </div>
+            <div class="results-area" id="fbResults"></div>
+        </div>
+
+        <div class="search-card">
+            <div class="title-area">
+                <h2><i class="fas fa-search"></i> البحث عن أي رقم هاتف</h2>
+                <p><strong style="color:#ff6b6b;"></strong></p>
+            </div>
+            <div class="country-grid" id="countryGrid">
+                <div class="country-btn active" data-code="964"><span class="code">+964</span><span class="name">العراق</span></div>
+                <div class="country-btn" data-code="966"><span class="code">+966</span><span class="name">السعودية</span></div>
+                <div class="country-btn" data-code="971"><span class="code">+971</span><span class="name">الإمارات</span></div>
+                <div class="country-btn" data-code="962"><span class="code">+962</span><span class="name">الأردن</span></div>
+                <div class="country-btn" data-code="20"><span class="code">+20</span><span class="name">مصر</span></div>
+                <div class="country-btn" data-code="961"><span class="code">+961</span><span class="name">لبنان</span></div>
+                <div class="country-btn" data-code="967"><span class="code">+967</span><span class="name">اليمن</span></div>
+            </div>
+            <div class="input-row">
+                <div class="input-wrap">
+                    <span class="prefix" id="phonePrefix">+964</span>
+                    <input type="text" id="phoneInput" placeholder="أدخل رقم الهاتف ..." dir="ltr">
+                </div>
+                <button class="btn-search" id="searchBtn" onclick="startSearch()"><i class="fas fa-search"></i> بحث شامل</button>
+            </div>
+            <div class="search-hint">
+                <div class="hint"><i class="fas fa-cloud"></i> حفظ في Firebase</div>
+                <div class="badges">
+                    <span class="badge"><i class="fas fa-shield-alt"></i> آمن</span>
+                    <span class="badge"><i class="fas fa-bolt"></i> فوري</span>
+                    <span class="badge"><i class="fas fa-cloud"></i> سحابي</span>
+                    <span class="badge"><i class="fas fa-database"></i> نراقبك في كل مكان </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="loader-area" id="loaderArea">
+            <div class="spinner"></div>
+            <p>جاري البحث في جميع المحركات ...</p>
+        </div>
+        <div class="results-area" id="resultsArea"></div>
+
+        <div class="footer">
+            <div class="dev-info">
+                <span class="highlight">@SIN_PHP</span>
+                <span style="color:#333;">|</span>
+                <span style="color:#555;">جميع الحقوق محفوظة</span>
+                <span style="color:#333;">|</span>
+                <span class="highlight">@K_K2P</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedCode = '964';
+        let isSearching = false;
+        let isFbSearching = false;
+
+        document.querySelectorAll('.country-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.country-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedCode = this.dataset.code;
+                document.getElementById('phonePrefix').textContent = '+' + selectedCode;
+            });
+        });
+
+        async function loadIPInfo() {
+            try {
+                let res = await fetch('/api/ipinfo');
+                let data = await res.json();
+                document.getElementById('userIP').textContent = data.ip || 'غير معروف';
+                document.getElementById('userCountry').textContent = data.country || 'غير معروف';
+                document.getElementById('userCity').textContent = data.city || 'غير معروف';
+                document.getElementById('userISP').textContent = data.isp || 'غير معروف';
+                document.getElementById('userRegion').textContent = data.region || 'غير معروف';
+            } catch(e) {
+                document.getElementById('userIP').textContent = 'خطأ في التحميل';
+            }
+        }
+        loadIPInfo();
+
+        async function searchFacebook() {
+            if (isFbSearching) return;
+            let query = document.getElementById('fbSearchInput').value.trim();
+            if (!query) { alert('⚠️ الرجاء إدخال اسم الصفحة أو الشخص'); return; }
+            
+            isFbSearching = true;
+            let loader = document.getElementById('fbLoader');
+            let results = document.getElementById('fbResults');
+            let searchBtn = document.getElementById('fbSearchBtn');
+            
+            loader.style.display = 'block';
+            results.className = 'results-area';
+            results.innerHTML = '';
+            searchBtn.disabled = true;
+            
+            try {
+                let res = await fetch('/api/facebook/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                let data = await res.json();
+                
+                loader.style.display = 'none';
+                searchBtn.disabled = false;
+                isFbSearching = false;
+                results.className = 'results-area active';
+                
+                if (data.error) {
+                    results.innerHTML = `<div style="color:#ff6b6b;text-align:center;padding:30px;">⚠️ ${data.error}</div>`;
+                    return;
+                }
+                
+                if (data.results && data.results.length > 0) {
+                    let html = `
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;background:rgba(0,0,0,0.25);border-radius:14px;padding:16px 20px;margin-bottom:20px;border:1px solid rgba(24,119,242,0.15);">
+                            <div style="text-align:center;"><div style="color:var(--text-muted);font-size:11px;font-weight:700;">نتائج البحث</div><div style="color:#1877f2;font-size:16px;font-weight:900;">${data.results.length}</div></div>
+                        </div>
+                    `;
+                    data.results.forEach((item, idx) => {
+                        html += `
+                            <div class="fb-result-item">
+                                <div style="color:var(--text-muted);font-size:12px;font-weight:700;margin-bottom:8px;">✦ النتيجة ${idx+1}</div>
+                                <div class="row"><span class="key">📌 الاسم</span><span class="val">${item.name}</span></div>
+                                <div class="row"><span class="key">🆔 المعرف</span><span class="val">${item.id}</span></div>
+                                <div class="row"><span class="key">🔗 الرابط</span><span class="val"><a href="${item.link}" target="_blank">${item.link}</a></span></div>
+                            </div>
+                        `;
+                    });
+                    results.innerHTML = html;
+                } else {
+                    results.innerHTML = `
+                        <div style="text-align:center;padding:40px;color:var(--text-muted);">
+                            <i class="fab fa-facebook" style="font-size:35px;display:block;margin-bottom:12px;color:#1877f2;"></i>
+                            لا توجد نتائج
+                        </div>
+                    `;
+                }
+            } catch(e) {
+                loader.style.display = 'none';
+                searchBtn.disabled = false;
+                isFbSearching = false;
+                results.className = 'results-area active';
+                results.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:30px;">⚠️ حدث خطأ</div>';
+            }
+        }
+
+        async function startSearch() {
+            if (isSearching) return;
+            let phone = document.getElementById('phoneInput').value.trim();
+            if (!phone) { alert(' الرجاء إدخال رقم الهاتف'); return; }
+            phone = phone.replace(/[^0-9+]/g, '');
+            if (phone.startsWith('+')) {
+                let match = phone.match(/^\+(\d+)/);
+                if (match) {
+                    selectedCode = match[1];
+                    phone = phone.substring(selectedCode.length + 1);
+                    document.querySelectorAll('.country-btn').forEach(b => { b.classList.toggle('active', b.dataset.code === selectedCode); });
+                    document.getElementById('phonePrefix').textContent = '+' + selectedCode;
+                }
+            }
+            phone = phone.replace(/^0+/, '');
+            if (!phone || phone.length < 6) { alert(' الرجاء إدخال رقم صحيح (6 أرقام على الأقل)'); return; }
+            isSearching = true;
+            let loader = document.getElementById('loaderArea');
+            let results = document.getElementById('resultsArea');
+            let searchBtn = document.getElementById('searchBtn');
+            loader.style.display = 'block';
+            results.className = 'results-area';
+            results.innerHTML = '';
+            searchBtn.disabled = true;
+            try {
+                let res = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: selectedCode, phone: phone })
+                });
+                let data = await res.json();
+                loader.style.display = 'none';
+                searchBtn.disabled = false;
+                isSearching = false;
+                results.className = 'results-area active';
+                renderResults(data);
+                updateStats();
+            } catch (e) {
+                loader.style.display = 'none';
+                searchBtn.disabled = false;
+                isSearching = false;
+                results.className = 'results-area active';
+                results.innerHTML = '<div style="color:#ff6b6b;text-align:center;padding:30px;"> حدث خطأ</div>';
+            }
+        }
+
+        function renderResults(data) {
+            let html = '';
+            html += `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;background:rgba(0,0,0,0.25);border-radius:14px;padding:16px 20px;margin-bottom:20px;border:1px solid rgba(212,175,55,0.08);">
+                    <div style="text-align:center;"><div style="color:var(--text-muted);font-size:11px;font-weight:700;">رقم الهاتف</div><div style="color:var(--gold);font-size:16px;font-weight:900;">${data.phone || 'N/A'}</div></div>
+                    <div style="text-align:center;"><div style="color:var(--text-muted);font-size:11px;font-weight:700;">المصدر</div><div style="font-size:14px;font-weight:700;color:${data.source === 'cache' ? '#4ade80' : '#ffd700'};">${data.source === 'cache' ? ' محفوظ' : 'جديد'}</div></div>
+                    <div style="text-align:center;"><div style="color:var(--text-muted);font-size:11px;font-weight:700;">النتائج</div><div style="color:var(--gold);font-size:16px;font-weight:900;">${data.results ? data.results.length : 0}</div></div>
+                </div>
+            `;
+            let cleanPhone = data.phone ? data.phone.replace('+', '') : '';
+            html += `
+                <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+                    <a href="https://wa.me/${cleanPhone}" target="_blank" style="flex:1;background:#25D366;color:#fff;padding:14px;border-radius:14px;text-align:center;text-decoration:none;font-weight:800;min-width:120px;transition:all 0.3s;"><i class="fab fa-whatsapp"></i> واتساب</a>
+                    <a href="https://t.me/${cleanPhone}" target="_blank" style="flex:1;background:#0088cc;color:#fff;padding:14px;border-radius:14px;text-align:center;text-decoration:none;font-weight:800;min-width:120px;transition:all 0.3s;"><i class="fab fa-telegram"></i> تليجرام</a>
+                </div>
+            `;
+            if (data.results && data.results.length > 0) {
+                data.results.forEach((item, idx) => {
+                    html += `<div class="result-item">`;
+                    html += `<div style="color:var(--text-muted);font-size:12px;font-weight:700;margin-bottom:8px;">✦ النتيجة ${idx+1}</div>`;
+                    if (typeof item === 'object') {
+                        for (let [key, value] of Object.entries(item)) {
+                            if (value && value !== 'N/A' && value !== 'null') {
+                                html += `<div class="row"><span class="key">${key}</span><span class="val">${value}</span></div>`;
+                            }
+                        }
+                    }
+                    html += `</div>`;
+                });
+            } else {
+                html += `
+                    <div style="text-align:center;padding:40px;color:var(--text-muted);">
+                        <i class="fas fa-inbox" style="font-size:35px;display:block;margin-bottom:12px;color:var(--gold);"></i>
+                        لا توجد نتائج
+                    </div>
+                `;
+            }
+            document.getElementById('resultsArea').innerHTML = html;
+            document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function updateStats() {
+            try {
+                let res = await fetch('/api/stats');
+                let data = await res.json();
+                document.getElementById('statCache').textContent = data.cache_count || 0;
+                document.getElementById('statSearches').textContent = data.total_searches || 0;
+                document.getElementById('statUsers').textContent = data.total_users || 0;
+                document.getElementById('statActive').textContent = data.active_users || 0;
+            } catch (e) {}
+        }
+
+        updateStats();
+        setInterval(updateStats, 10000);
+
+        document.getElementById('phoneInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') startSearch();
+        });
+        document.getElementById('fbSearchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchFacebook();
+        });
+    </script>
+</body>
+  </html>
